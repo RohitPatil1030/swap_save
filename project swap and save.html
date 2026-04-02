@@ -1,0 +1,1224 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Swap & Save</title>
+<style>
+  :root{
+    --bg1:#0f0f1a; --bg2:#1a1a2e; --card:#1f2235; --accent:#ff6ec7; --accent-2:#7ef9ff;
+    --text:#ffffff; --muted:#b8c1ec; --good:#31e981; --warn:#ffcc00; --bad:#ff5252;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    color:var(--text);
+    background: radial-gradient(1000px 600px at 10% -10%, #2a2a4a55, transparent 60%),
+                linear-gradient(135deg, var(--bg1), var(--bg2));
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  img, svg, video, canvas{max-width:100%}
+  .app{max-width:1200px;margin:0 auto;padding:16px}
+  header{
+    position:sticky; top:0; z-index:10;
+    background:linear-gradient(180deg, #0f0f1acc 60%, #0f0f1a00);
+    backdrop-filter:saturate(120%) blur(8px);
+    border-bottom:1px solid rgba(126,249,255,0.12);
+  }
+  .nav{display:flex; align-items:center; gap:12px; padding:12px 16px; flex-wrap:wrap;}
+  .logo{display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:14px;
+        background:#0f1128; box-shadow:0 0 0 1px #2b2f55 inset, 0 10px 24px #00000033;}
+  .logo svg{width:34px;height:34px}
+  .logo h1{font-size:16px; margin:0; letter-spacing:.3px; font-weight:800}
+  .tabs{display:flex; gap:8px; margin-left:10px; overflow:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px;}
+  .tabs::-webkit-scrollbar{height:8px}
+  .tabs::-webkit-scrollbar-thumb{background:#22263f;border-radius:10px}
+  .tab{padding:8px 12px; border-radius:10px; background:#14162b; color:#cbd3ff; font-size:13px;
+       border:1px solid #232651; cursor:pointer; transition:.15s; white-space:nowrap; font-weight:600}
+  .tab.active, .tab:hover{background:var(--card); color:#fff; box-shadow:0 0 0 1px #353a7d inset}
+  .user-chip{display:flex;align-items:center;gap:10px; margin-left:auto;}
+  .user-chip img{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #333}
+  .verified{display:inline-flex; align-items:center; gap:6px}
+  .verified svg{width:16px;height:16px}
+  .btn{cursor:pointer; background:var(--accent); color:#170a16; border:none; padding:10px 14px;
+       border-radius:12px; font-weight:800; transition:.18s; font-size:14px; letter-spacing:.2px}
+  .btn.secondary{background:#2a2d52; color:#fff; border:1px solid #3a3e78}
+  .btn.ghost{background:transparent; border:1px dashed #3a3e78; color:#cbd3ff}
+  .btn:hover{filter:brightness(1.05); transform:translateY(-1px)}
+  .btn:focus-visible{outline:none; box-shadow:0 0 0 3px #7ef9ff44}
+  .grid{display:grid; gap:16px}
+  .grid.cards{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+  .card{background:var(--card); border:1px solid #2b2f55; border-radius:16px; padding:14px;
+        box-shadow:0 8px 24px #0000002b; transition:.2s; position:relative; overflow:hidden}
+  .card, .row, .row-spread, .field{min-width:0}
+  .card::before{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(120deg, #7ef9ff0a, #ff6ec708 36%, transparent 70%);
+    pointer-events:none;
+  }
+  .card:hover{transform:translateY(-4px); box-shadow:0 14px 30px #00000040}
+  .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  .row-spread{display:flex; gap:12px; align-items:center; justify-content:space-between}
+  .muted{color:var(--muted)}
+  .kpi{display:flex; gap:12px; flex-wrap:wrap}
+  .kpi .pill{background:#14162b; border:1px solid #2b2f55; border-radius:14px; padding:10px 12px; min-width:140px; box-shadow:0 0 0 1px #1f2550 inset}
+  .pill b{font-size:16px}
+  .hero{padding:18px; border-radius:16px; background:linear-gradient(180deg,#1d22420d,#1d224200)}
+  .hero h2{margin:0 0 8px; font-size:38px; line-height:1.05; letter-spacing:.2px}
+  .hero p{margin:0}
+  .hide{display:none !important}
+  .field{display:grid; gap:6px; margin-bottom:12px}
+  .field label{font-weight:600; color:#d5dcff}
+  .field input, .field select, .field textarea{
+    background:#12142a; border:1px solid #2b2f55; color:#fff; border-radius:10px; padding:10px 12px; outline:none;
+    font-size:14px; min-height:44px;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{box-shadow:0 0 0 2px #4450ff55}
+  .form{max-width:480px; margin:0 auto}
+  .pimg{display:block; width:100%; height:180px; object-fit:cover; border-radius:12px; border:1px solid #303566; background:#11152c; transition:transform .25s ease}
+  .card:hover .pimg{transform:scale(1.015)}
+  .modal-back{position:fixed; inset:0; background:#0008; display:none; align-items:center; justify-content:center; z-index:20}
+  .modal{background:#12142a; border:1px solid #303566; padding:18px; border-radius:16px; width:min(520px,92vw)}
+  .modal h3{margin:0 0 8px 0}
+  .coupon{position:relative; overflow:hidden; border-radius:14px; border:1px dashed #3a3e78; background:#0f1128; padding:14px}
+  .coupon .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:18px}
+  .coupon canvas{position:absolute; inset:0; width:100%; height:100%; border-radius:14px}
+  .tag{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid #2b2f55; background:#12142a; color:#cbd3ff}
+  .hr{height:1px; background:#2b2f55; margin:12px 0}
+  .toast{position:fixed; bottom:20px; right:20px; background:#0d1a10; color:#b7ffcc; border:1px solid #204a2d; padding:12px 14px; border-radius:12px; display:none; z-index:30}
+  .warn{background:#2b2308;color:#ffe9a6;border:1px solid #5c4b11}
+  .note{font-size:12px;color:#96a0ff}
+  .product-meta{margin:10px 2px 0; font-size:13px}
+  .card-pop{animation:cardIn .28s ease}
+  .product-title{font-size:22px; font-weight:800}
+  .product-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px}
+  .price-line{font-size:16px; color:#c6d2ff}
+  .twm-board{display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch}
+  .twm-box{background:#141935; border:1px solid #2b2f55; border-radius:14px; padding:12px}
+  .twm-box h4{margin:0 0 6px 0; font-size:14px}
+  .twm-box .name{font-weight:700}
+  .twm-box .price{color:#c6d2ff; margin-top:4px}
+  .twm-vs{display:flex; align-items:center; justify-content:center; color:#9db0ff; font-weight:800}
+  .fair-badge{display:inline-block; padding:6px 10px; border-radius:999px; border:1px solid #2b2f55; font-size:12px}
+  .fair-badge.good{background:#0f2a1d; border-color:#235f3c; color:#9ef3c3}
+  .fair-badge.ok{background:#2b2308; border-color:#5c4b11; color:#ffe9a6}
+  .fair-badge.bad{background:#2e1111; border-color:#733030; color:#ffb9b9}
+  .twm-summary{margin-top:10px; font-size:13px}
+  @keyframes cardIn{
+    from{opacity:0; transform:translateY(8px)}
+    to{opacity:1; transform:translateY(0)}
+  }
+  .nav-toggle{display:inline-flex; margin-left:0}
+  .tabs-backdrop{
+    position:fixed;
+    inset:0;
+    border:0;
+    background:#0009;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+    z-index:39;
+  }
+  .tabs-backdrop.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .two-col{grid-template-columns:1fr 1fr; gap:20px}
+  .split-320{grid-template-columns:320px 1fr; gap:22px}
+  .filter-bar{display:flex; gap:10px; align-items:end; flex-wrap:wrap}
+  .minw-160{min-width:160px}
+  .minw-240{min-width:240px}
+  .minw-260{min-width:260px}
+
+  /* Responsive tweaks */
+  @media (max-width:900px){
+    .app{padding:12px}
+    .hero{padding:14px}
+    .hero h2{font-size:32px}
+    .kpi .pill{min-width:120px}
+    .pimg{height:150px}
+  }
+  @media (max-width:640px){
+    .logo h1{font-size:14px}
+    .nav{padding:8px}
+    .tabs{margin-left:6px; gap:6px}
+    .grid.cards{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+    .pimg{height:130px}
+    .hero h2{font-size:28px}
+    .btn{padding:10px 12px;font-size:13px}
+    header{padding-bottom:6px}
+    .row-spread{align-items:flex-start}
+    .product-head{flex-direction:column; align-items:flex-start}
+    .product-title{font-size:18px}
+  }
+  @media (max-width:900px){
+    .two-col,.split-320{grid-template-columns:1fr}
+    .minw-240,.minw-260,.minw-160{min-width:unset}
+  }
+  @media (max-width:1024px){
+    .nav{gap:10px; padding:10px 12px}
+    .nav-toggle{position:relative; z-index:41}
+    .nav-toggle{order:-1; margin-right:4px}
+    .tabs{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      position:fixed;
+      top:0;
+      left:0;
+      bottom:0;
+      width:min(78vw,320px);
+      margin:0;
+      padding:18px 12px 20px;
+      background:#0f1128;
+      border-right:1px solid #2b2f55;
+      box-shadow:12px 0 30px #0008;
+      overflow-y:auto;
+      transform:translateX(-105%);
+      transition:transform .22s ease;
+      z-index:40;
+    }
+    .tabs.open{display:flex !important; transform:translateX(0)}
+    .tab{width:100%; text-align:left}
+    .user-chip{width:100%; justify-content:flex-end}
+    .filter-bar > *{width:100%}
+    .filter-bar .btn{width:100%}
+    .twm-board{grid-template-columns:1fr}
+    .twm-vs{padding:6px 0}
+    .row > .btn, .row > .tag{width:100%}
+    .row > .field{width:100%}
+    .user-chip{justify-content:space-between}
+    .field input, .field select, .field textarea{font-size:16px}
+    .toast{left:12px; right:12px; bottom:12px}
+    .modal{width:min(520px,96vw)}
+  }
+  .tabs.collapsed{display:none}
+  @media (prefers-reduced-motion: reduce){
+    .card,.btn,.pimg{transition:none}
+    .card-pop{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <!-- SVG LOGO -->
+    <a href="#home" class="logo" onclick="goto('home')">
+      <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff6ec7"/><stop offset="1" stop-color="#7ef9ff"/>
+        </linearGradient></defs>
+        <circle cx="32" cy="32" r="30" stroke="url(#g1)" stroke-width="3" fill="#12142a"/>
+        <path d="M18 36c10 8 24 8 34 0-2 10-12 18-22 18S16 46 18 36Z" fill="url(#g1)"/>
+        <path d="M20 24h24l-5 8H25l-5-8Z" fill="#0f0f1a" stroke="#2b2f55"/>
+      </svg>
+      <h1>Swap & Save</h1>
+    </a>
+
+    <button class="btn secondary nav-toggle" type="button" onclick="toggleTabs()" aria-controls="tabs" aria-expanded="false" id="navToggle">Menu</button>
+
+    <nav class="tabs collapsed" id="tabs" aria-label="Main navigation">
+      <a class="tab" data-page="home"    onclick="goto('home')">Home</a>
+      <a class="tab" data-page="payment" onclick="goto('payment')">Payment</a>
+      <a class="tab" data-page="history" onclick="goto('history')">History</a>
+      <a class="tab" data-page="sell"    onclick="goto('sell')">Sell</a>
+      <a class="tab" data-page="twm"     onclick="goto('twm')">TWM</a>
+      <a class="tab" data-page="kyc"     onclick="goto('kyc')">KYC</a>
+      <a class="tab" data-page="account" onclick="goto('account')">My Account</a>
+      <a class="tab" data-page="about"   onclick="goto('about')">About</a>
+      <a class="tab" data-page="deals"   onclick="goto('deals')">Deals</a>
+    </nav>
+
+    <button class="tabs-backdrop" type="button" id="tabsBackdrop" aria-label="Close menu" onclick="closeTabs()"></button>
+
+    <div class="user-chip" id="userChip">
+      <img id="userPic" src="" alt="user" class="hide"/>
+      <span id="userName" class="muted">Guest</span>
+      <span id="kycTick" class="verified hide" title="KYC Verified" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="#31e981"><path d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.7-7.7 1.4 1.4z"/></svg>
+      </span>
+      <button class="btn secondary" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</header>
+
+<main class="app" id="app">
+  <!-- LOGIN -->
+  <section id="page-login">
+    <div class="hero">
+      <h2>Welcome back</h2>
+      <p class="muted">Login to start swapping, selling, and unlocking coupons.</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Login with Email</h3>
+        <form class="form" onsubmit="emailLogin(event)">
+          <div class="field"><label>Email</label><input type="email" id="email" required placeholder="you@example.com"/></div>
+          <div class="field"><label>Password</label><input type="password" id="password" required minlength="4" placeholder="??????"/></div>
+          <div class="field"><label>Confirm password (for create account)</label><input type="password" id="confirmPassword" minlength="4" placeholder="??????"/></div>
+          <div class="row" style="margin-top:-4px">
+            <label class="muted" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="showPassword" onchange="togglePasswordVisibility()"/>
+              Show password
+            </label>
+          </div>
+          <div class="row">
+            <button class="btn" type="submit">Sign in</button>
+            <button class="btn secondary" type="button" onclick="emailSignup()">Create account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+</section>
+
+  <!-- HOME -->
+  <section id="page-home" class="hide">
+    <div class="hero row-spread">
+      <div>
+        <h2>Home</h2>
+        <p class="muted">Discover products, swap listings, and pay securely with real money.</p>
+      </div>
+      <div class="kpi">
+        <div class="pill">Balance: <b id="kpiBalance">?0</b></div>
+        <div class="pill">Coupons: <b id="kpiCoupons">0</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="filter-bar">
+        <div class="field" style="margin-bottom:0; min-width:220px; flex:1">
+          <label>Search products</label>
+          <input id="homeSearch" placeholder="Search by name..." oninput="renderProducts()"/>
+        </div>
+        <div class="field" style="margin-bottom:0; min-width:180px">
+          <label>Sort</label>
+          <select id="homeSort" onchange="renderProducts()">
+            <option value="default">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A-Z</option>
+          </select>
+        </div>
+        <button class="btn ghost" type="button" onclick="clearHomeFilters()">Reset</button>
+      </div>
+      <div id="productMeta" class="muted product-meta">Showing 0 products</div>
+    </div>
+    <div class="grid cards" id="productGrid"></div>
+  </section>
+
+  <!-- PAYMENT -->
+  <section id="page-payment" class="hide">
+    <div class="hero"><h2>Payment</h2><p class="muted">Complete secure payment in ?. <b>KYC required.</b></p></div>
+    <div class="card">
+      <div class="row">
+        <div class="field minw-240"><label>Item name</label><input id="payItemName" placeholder="e.g., Premium Headphones"/></div>
+        <div class="field minw-160"><label>Amount (?)</label><input id="payAmount" type="number" value="1200" min="0"/></div>
+        <div class="field minw-160">
+          <label>Payment method</label>
+          <select id="payMethod">
+            <option value="UPI">UPI</option>
+            <option value="Card">Card</option>
+            <option value="NetBanking">Net Banking</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="makePayment()">Pay securely</button>
+        <button class="btn ghost" onclick="autoFillPayment()">Random checkout</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Payment logs appear in <b>History</b>.</p>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="page-history" class="hide">
+    <div class="hero"><h2>History</h2><p class="muted">See your recent payments and activity logs.</p></div>
+    <div class="card">
+      <div class="row-spread">
+        <div class="muted">Most recent first</div>
+        <button class="btn ghost" onclick="clearHistory()">Clear history</button>
+      </div>
+      <div class="hr"></div>
+      <div id="historyList" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- SELL -->
+  <section id="page-sell" class="hide">
+    <div class="hero row-spread">
+      <div><h2>Sell My Product</h2><p class="muted">List your item using camera or file upload. <b>KYC required.</b></p></div>
+      <div><span class="tag" id="sellKycStatus">KYC: Not verified</span></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>New Listing</h3>
+        <form class="form" onsubmit="addListing(event)">
+          <div class="field"><label>Product Name</label><input id="sellName" required placeholder="e.g., Running Shoes"/></div>
+          <div class="field"><label>Price (?)</label><input id="sellPrice" type="number" min="1" value="1500" required/></div>
+          <div class="field"><label>Description</label><textarea id="sellDesc" rows="3" placeholder="Condition, brand, color..."></textarea></div>
+          <div class="field"><label>Upload Image (camera or file)</label>
+            <input id="sellImg" type="file" accept="image/*" capture="environment"/>
+          </div>
+          <div class="row">
+            <button class="btn" type="submit">List product</button>
+            <button class="btn ghost" type="button" onclick="exampleListing()">Fill sample</button>
+          </div>
+          <p class="note">We?ll store the image locally (base64) so it shows offline.</p>
+        </form>
+      </div>
+      <div class="card">
+        <h3>My Listings</h3>
+        <div id="myListings" class="grid cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWM ? Trade With Me -->
+  <section id="page-twm" class="hide">
+    <div class="hero row-spread">
+      <div><h2>Trade With Me (TWM)</h2><p class="muted">Propose a trade between your listing and another user?s listing. <b>KYC required.</b></p></div>
+      <div><span class="tag" id="twmKycStatus">KYC: Not verified</span></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="field minw-260">
+          <label>Your listing</label>
+          <select id="twmMine" onchange="renderTradeAdvisor()"></select>
+        </div>
+        <div class="field minw-260">
+          <label>Other listing</label>
+          <select id="twmOther" onchange="renderTradeAdvisor()"></select>
+        </div>
+        <div class="field minw-160">
+          <label>Adjustment type</label>
+          <select id="twmSettleType" onchange="renderTradeAdvisor()">
+            <option value="auto">Auto (fair)</option>
+            <option value="pay">I will pay</option>
+            <option value="receive">I will receive</option>
+            <option value="none">No cash</option>
+          </select>
+        </div>
+        <div class="field minw-160">
+          <label>Adjustment amount (?)</label>
+          <input id="twmSettleAmount" type="number" min="0" value="0" oninput="renderTradeAdvisor()"/>
+        </div>
+      </div>
+      <div class="twm-board" style="margin-top:6px">
+        <div class="twm-box">
+          <h4>Your side</h4>
+          <div class="name" id="twmMineName">-</div>
+          <div class="price" id="twmMinePrice">?0</div>
+        </div>
+        <div class="twm-vs">Swap</div>
+        <div class="twm-box">
+          <h4>Other side</h4>
+          <div class="name" id="twmOtherName">-</div>
+          <div class="price" id="twmOtherPrice">?0</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <span class="fair-badge ok" id="twmFairBadge">Waiting for selection</span>
+        <span class="muted" id="twmDeltaLine"></span>
+      </div>
+      <div class="twm-summary muted" id="twmSummary">Select both listings to analyze fair trade.</div>
+      <div class="row">
+        <button class="btn" onclick="proposeTrade()">Propose Trade</button>
+        <button class="btn secondary" onclick="applyFairAdjustment()">Use fair adjustment</button>
+        <button class="btn ghost" onclick="seedMarketplace()">Seed marketplace</button>
+      </div>
+      <p class="note">The system compares item values and suggests fair cash adjustment before trade.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Other Customers? Listings</h3>
+        <div id="marketOther" class="grid cards"></div>
+      </div>
+      <div class="card">
+        <h3>My Listings</h3>
+        <div id="marketMine" class="grid cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KYC -->
+  <section id="page-kyc" class="hide">
+    <div class="hero"><h2>KYC Verification</h2><p class="muted">Complete KYC to unlock <b>Sell</b> and <b>TWM</b>.</p></div>
+    <div class="card">
+      <form class="form" onsubmit="submitKYC(event)">
+        <div class="field"><label>Full Name (as per Aadhaar)</label><input id="kycName" required minlength="3" maxlength="60" placeholder="e.g., Aarav Kumar"/></div>
+        <!-- FIXED: pattern here must be single backslash (HTML pattern attribute expects normal regex) -->
+        <div class="field"><label>Aadhaar Number (12 digits)</label><input id="kycAadhaar" required pattern="\d{12}" inputmode="numeric" maxlength="12" placeholder="123412341234" oninput="this.value=this.value.replace(/\D/g,'').slice(0,12)"/></div>
+        <!-- FIXED: PAN pattern single backslash and short notation for last letter -->
+        <div class="field"><label>PAN (ABCDE1234F)</label><input id="kycPan" required pattern="[A-Z]{5}\d{4}[A-Z]" minlength="10" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,10)" /></div>
+        <div class="row">
+          <button class="btn" type="submit">Submit KYC</button>
+          <button class="btn secondary" type="button" onclick="autoKyc()">Auto-fill</button>
+        </div>
+        <p class="note" id="kycVerifiedAt">KYC not verified yet.</p>
+        <p class="note">Demo: We validate format only and mark as verified locally.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ACCOUNT -->
+  <section id="page-account" class="hide">
+    <div class="hero"><h2>My Account</h2><p class="muted">Manage your profile and payment balance.</p></div>
+    <div class="grid split-320">
+      <div class="card">
+        <div class="row" style="gap:12px">
+          <img id="accPic" src="" style="width:64px;height:64px;border-radius:50%;border:1px solid #333;object-fit:cover"/>
+          <div>
+            <div><b id="accName">Guest</b> <span id="accTick" class="verified hide" title="KYC Verified">
+              <svg viewBox="0 0 24 24" fill="#31e981"><path d="M9 16.2l-3.5-3.5 1.4-1.4L9 13.4l7.7-7.7 1.4 1.4z"/></svg>
+            </span></div>
+            <div class="muted" id="accEmail">guest@local</div>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div class="field"><label>Display name</label><input id="accNameInput" placeholder="Your name"/></div>
+        <p class="note" id="accKycAt">KYC status: Not verified.</p>
+        <button class="btn" onclick="saveAccount()">Save</button>
+      </div>
+      <div class="card">
+        <h3>Payments</h3>
+        <div class="kpi">
+          <div class="pill">Balance: <b id="accBalance">?0</b></div>
+          <div class="pill">Transactions: <b id="accTxns">0</b></div>
+        </div>
+        <div class="hr"></div>
+        <div class="row">
+          <button class="btn secondary" onclick="addFunds()">Add funds</button>
+          <button class="btn ghost" onclick="resetApp()">Reset app</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="page-about" class="hide">
+    <div class="hero"><h2>About <span class="tag">Swap & Save</span></h2></div>
+    <div class="grid">
+      <div class="card">
+        <h3>What it is</h3>
+        <p class="muted">Swap or sell your items and complete checkout using INR payment methods.</p>
+      </div>
+      <div class="card">
+        <h3>How payments work</h3>
+        <ul>
+          <li>Set item prices in INR</li>
+          <li>Pay via UPI, Card, or Net Banking</li>
+          <li>Transaction logs are stored in History</li>
+          <li>Coupons can be collected and revealed</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Privacy</h3>
+        <p class="muted">This demo stores data only in your browser (<code>localStorage</code>). For production add a backend + secure KYC.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEALS -->
+  <section id="page-deals" class="hide">
+    <div class="hero row-spread">
+      <div><h2>Deals & Coupons</h2><p class="muted">Scratch to reveal your coupon codes</p></div>
+      <span class="note">Coupons unlock only when you buy, sell, or trade.</span>
+    </div>
+    <div id="couponList" class="grid cards"></div>
+  </section>
+</main>
+
+<!-- SWAP MODAL -->
+<div class="modal-back" id="swapBack" aria-hidden="true">
+  <div class="modal">
+    <h3>Confirm Swap</h3>
+    <p class="muted" id="swapItemName">Item</p>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" onclick="confirmSwap()">Confirm swap request</button>
+      <button class="btn secondary" onclick="closeSwap()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ================== STATE ================== */
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>Array.from(document.querySelectorAll(q));
+const store = {
+  load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def; }catch{ return def; } },
+  save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+const FALLBACK = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='640' height='480'><rect width='100%' height='100%' fill='#20234a'/><text x='50%' y='50%' fill='white' text-anchor='middle' font-size='24' font-family='Arial'>Image offline</text></svg>`);
+
+const PRODUCTS = [
+  {id:"p1", name:"Running Shoes", value:150,
+   img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80"},
+  {id:"p2", name:"Wireless Headphones", value:220,
+   img:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80"},
+  {id:"p3", name:"Travel Backpack", value:180,
+   img:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=1200&q=80"},
+  {id:"p4", name:"Smart Watch", value:260,
+   img:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80"},
+];
+const MARKET_DEFAULT_IMAGES = {
+  "Leather Boots": "https://images.pexels.com/photos/267301/pexels-photo-267301.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "Gaming Headset": "https://images.unsplash.com/photo-1612444530582-fc66183b16f7?auto=format&fit=crop&w=1200&q=80",
+  "Gym Duffel": "https://images.pexels.com/photos/1556710/pexels-photo-1556710.jpeg?auto=compress&cs=tinysrgb&w=1200"
+};
+function getDefaultMarketImage(title){
+  return MARKET_DEFAULT_IMAGES[title] || "";
+}
+
+const DEMO_USER_PIC = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='#282a5a'/><circle cx='64' cy='48' r='26' fill='#a0a7ff'/><rect x='28' y='84' width='72' height='28' rx='14' fill='#a0a7ff'/></svg>`);
+
+let state = store.load("swap_save_state_v2", null) || {
+  user: null,
+  auth: { users: [] },
+  kyc: { verified:false, name:"", aadhaar:"", pan:"", verifiedAt:null },
+  money: {balance: 5000},
+  coupons: [],
+  products: PRODUCTS,
+  history: [],
+  market: {
+    my: [],
+    other: [
+      {id:"o1", owner:"Alice", title:"Leather Boots", price:190, img:getDefaultMarketImage("Leather Boots")},
+      {id:"o2", owner:"Ben",   title:"Gaming Headset", price:210, img:getDefaultMarketImage("Gaming Headset")},
+      {id:"o3", owner:"Clara", title:"Gym Duffel",     price:130, img:getDefaultMarketImage("Gym Duffel")},
+    ]
+  }
+};
+if(!state.auth || !Array.isArray(state.auth.users)){
+  state.auth = { users: [] };
+}
+if(!state.kyc){
+  state.kyc = { verified:false, name:"", aadhaar:"", pan:"", verifiedAt:null };
+}
+if(typeof state.kyc.verifiedAt === "undefined"){
+  state.kyc.verifiedAt = null;
+}
+if(!state.money || typeof state.money.balance !== "number"){
+  const legacy = state.wallet || {};
+  const fromLegacy = (Number(legacy.credits||0) * 10) + (Number(legacy.points||0) * 2);
+  state.money = { balance: fromLegacy > 0 ? fromLegacy : 5000 };
+}
+if(state.wallet){ delete state.wallet; }
+if(!Array.isArray(state.products) || state.products.length !== PRODUCTS.length){
+  state.products = PRODUCTS.map(p=>({...p}));
+}else{
+  // Refresh old persisted product image links to current reliable sources.
+  const byId = Object.fromEntries(PRODUCTS.map(p=>[p.id,p]));
+  state.products = state.products.map(p=> byId[p.id] ? {...p, img: byId[p.id].img, name: byId[p.id].name, value: byId[p.id].value} : p);
+}
+if(state.market && Array.isArray(state.market.other)){
+  state.market.other = state.market.other.map(it=>{
+    const fixed = getDefaultMarketImage(it.title);
+    return fixed ? {...it, img: fixed} : it;
+  });
+}
+saveState();
+
+/* ================== UTILS ================== */
+function saveState(){ store.save("swap_save_state_v2", state); render(); }
+function toast(msg, warn=false){ const t=$("#toast"); t.textContent=msg; t.classList.toggle("warn",!!warn); t.style.display="block"; setTimeout(()=>t.style.display="none",2200); }
+function addHistory(entry){
+  state.history.unshift({ id:"h"+Date.now(), date:new Date().toISOString(), ...entry });
+  saveState();
+}
+function imgWithFallback(url, label){
+  const src = (url && String(url).trim()) ? url : FALLBACK;
+  return `<img class="pimg" src="${src}" loading="lazy" decoding="async"
+          data-fallback="${FALLBACK}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${label || "img"}">`;
+}
+function inr(n){ return "?" + Number(n||0).toLocaleString("en-IN"); }
+function formatDateTime(ts){
+  if(!ts) return "";
+  return new Date(ts).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
+/* ================== ROUTER ================== */
+function goto(page){ location.hash = page.startsWith("#")? page : "#"+page; }
+function closeTabs(){
+  const tabs = $("#tabs");
+  const btn = $("#navToggle");
+  const back = $("#tabsBackdrop");
+  if(tabs) tabs.classList.remove("open");
+  if(back) back.classList.remove("open");
+  if(btn) btn.setAttribute("aria-expanded","false");
+}
+function toggleTabs(){
+  const tabs = $("#tabs");
+  const btn = $("#navToggle");
+  const back = $("#tabsBackdrop");
+  if(!tabs || !btn) return;
+  const isMobile = window.matchMedia("(max-width: 1024px)").matches;
+  let open = true;
+  if(isMobile){
+    tabs.classList.remove("collapsed");
+    open = tabs.classList.toggle("open");
+    if(back) back.classList.toggle("open", open);
+  }else{
+    tabs.classList.toggle("collapsed");
+    open = !tabs.classList.contains("collapsed");
+  }
+  btn.setAttribute("aria-expanded", String(open));
+}
+function applyRoute(){
+  const page = (location.hash||"#login").replace("#","");
+  $$(".tab").forEach(el=> el.classList.toggle("active", el.getAttribute("data-page")==page));
+  ["login","home","payment","history","sell","twm","kyc","account","about","deals"].forEach(id=>{
+    const el = $("#page-"+id);
+    if(el) el.classList.toggle("hide", id!==page);
+  });
+  // Require login for pages except login
+  if(page!=="login" && !state.user){ location.hash = "#login"; return; }
+  // Require KYC for payment flow
+  if(page==="payment" && !state.kyc.verified){ location.hash = "#kyc"; toast("KYC required for payment", true); return; }
+  closeTabs();
+}
+window.addEventListener("hashchange", applyRoute);
+window.addEventListener("resize", ()=>{
+  if(!window.matchMedia("(max-width: 1024px)").matches){
+    $("#tabs")?.classList.remove("open");
+    $("#tabsBackdrop")?.classList.remove("open");
+  }
+});
+document.addEventListener("keydown", (e)=>{
+  if(e.key==="Escape") closeTabs();
+});
+
+/* ================== AUTH ================== */
+function togglePasswordVisibility(){
+  const show = $("#showPassword")?.checked;
+  const type = show ? "text" : "password";
+  if($("#password")) $("#password").type = type;
+  if($("#confirmPassword")) $("#confirmPassword").type = type;
+}
+function emailLogin(e){
+  e.preventDefault();
+  const email = $("#email").value.trim();
+  const pass  = $("#password").value.trim();
+  if(!email || pass.length<4){ toast("Enter valid email & 4+ char password", true); return; }
+  const account = state.auth.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if(!account){ toast("Account not found. Please create account first.", true); return; }
+  if(account.password !== pass){ toast("Incorrect password", true); return; }
+  state.user = {name: account.name, email: account.email, photo: DEMO_USER_PIC, provider:"local"};
+  saveState();
+  if($("#confirmPassword")) $("#confirmPassword").value = "";
+  goto("home");
+  toast("Logged in");
+}
+function emailSignup(){
+  const email = $("#email").value.trim();
+  const pass  = $("#password").value.trim();
+  const confirmPass = $("#confirmPassword").value.trim();
+  if(!email || pass.length<4){ toast("Enter valid email & 4+ char password", true); return; }
+  if(confirmPass !== pass){ toast("Password and confirm password must match", true); return; }
+  const exists = state.auth.users.some(u => u.email.toLowerCase() === email.toLowerCase());
+  if(exists){ toast("Account already exists. Please sign in.", true); return; }
+  const account = {name: email.split("@")[0], email, password: pass, createdAt: Date.now()};
+  state.auth.users.push(account);
+  state.user = {name: account.name, email: account.email, photo: DEMO_USER_PIC, provider:"local"};
+  saveState();
+  if($("#confirmPassword")) $("#confirmPassword").value = "";
+  goto("home");
+  toast("Account created");
+}
+function logout(){ state.user = null; saveState(); goto("login"); toast("Logged out"); }
+
+/* ================== HOME (Products & Buy) ================== */
+let pendingSwapId = null;
+let pendingTradeCheckout = null;
+
+function renderProducts(){
+  const g = $("#productGrid"); if(!g) return;
+  const q = ($("#homeSearch")?.value || "").trim().toLowerCase();
+  const sortBy = $("#homeSort")?.value || "default";
+  let items = [...state.products];
+  if(q){ items = items.filter(p=>p.name.toLowerCase().includes(q)); }
+  if(sortBy==="price-asc") items.sort((a,b)=>a.value-b.value);
+  if(sortBy==="price-desc") items.sort((a,b)=>b.value-a.value);
+  if(sortBy==="name-asc") items.sort((a,b)=>a.name.localeCompare(b.name));
+  g.innerHTML = "";
+  if($("#productMeta")) $("#productMeta").textContent = `Showing ${items.length} product${items.length===1?"":"s"}`;
+  if(items.length===0){
+    g.innerHTML = `<div class="card"><div class="muted">No products match your search.</div></div>`;
+    return;
+  }
+  items.forEach(p=>{
+    const card = document.createElement("div");
+    card.className = "card card-pop product-card";
+    card.innerHTML = `
+      ${imgWithFallback(p.img, p.name)}
+      <div class="product-head">
+        <div>
+          <div class="product-title">${p.name}</div>
+          <div class="price-line">${inr(p.value)}</div>
+        </div>
+        <button class="btn" onclick="startBuy('${p.id}')">Buy</button>
+      </div>
+    `;
+    g.appendChild(card);
+  });
+}
+function startBuy(id){
+  const p = state.products.find(x=>x.id===id);
+  if(!p){ toast("Product not found", true); return; }
+  $("#payItemName").value = p.name;
+  $("#payAmount").value = p.value;
+  $("#payMethod").value = "UPI";
+  goto("payment");
+  toast("Proceed to payment to buy this product");
+}
+function clearHomeFilters(){
+  if($("#homeSearch")) $("#homeSearch").value = "";
+  if($("#homeSort")) $("#homeSort").value = "default";
+  renderProducts();
+}
+function openSwap(id){
+  pendingSwapId = id;
+  const p = state.products.find(x=>x.id===id);
+  $("#swapItemName").textContent = `${p.name} ? Swap request will be logged in history`;
+  $("#swapBack").style.display = "flex";
+}
+function closeSwap(){ $("#swapBack").style.display = "none"; pendingSwapId = null; }
+function confirmSwap(){
+  if(!pendingSwapId) return;
+  const p = state.products.find(x=>x.id===pendingSwapId);
+  addHistory({type:"swap", description:`Swap request submitted for ${p?.name || pendingSwapId}`, amountDelta:0});
+  saveState();
+  closeSwap();
+  toast("Swap request sent");
+}
+/* ================== PAYMENT ================== */
+function autoFillPayment(){
+  const sample = ["Eco Bottle","Gaming Mouse","Wireless Charger","Notebook","LED Strip","Bluetooth Speaker","Sling Bag"];
+  $("#payItemName").value = sample[Math.floor(Math.random()*sample.length)];
+  $("#payAmount").value = 800 + Math.floor(Math.random()*3200);
+  $("#payMethod").value = ["UPI","Card","NetBanking"][Math.floor(Math.random()*3)];
+}
+function makePayment(){
+  if(!kycRequiredGuard()) return;
+  const isTradeCheckout = !!pendingTradeCheckout;
+  const name = $("#payItemName").value.trim() || "Purchase";
+  const amount = parseInt($("#payAmount").value||"0",10);
+  const method = $("#payMethod").value || "UPI";
+  if((isTradeCheckout && amount<0) || (!isTradeCheckout && amount<1)){ toast("Enter valid amount", true); return; }
+  if(amount>state.money.balance){ toast("Insufficient balance", true); return; }
+  state.money.balance -= amount;
+  addHistory({type:"payment", description:`Paid for ${name} via ${method}`, amountDelta:-amount});
+  if(isTradeCheckout){
+    finalizeTradeAfterPayment();
+    saveState();
+    toast(`Payment successful: ${inr(amount)}. Trade completed`);
+    goto("history");
+    return;
+  }
+  issueCoupon("Purchase reward", true);
+  saveState();
+  toast(`Payment successful: ${inr(amount)}. Coupon unlocked`);
+}
+function finalizeTradeAfterPayment(){
+  const pending = pendingTradeCheckout;
+  pendingTradeCheckout = null;
+  if(!pending) return;
+  const {myId, otherId, settle} = pending;
+  const mine = state.market.my.find(x=>x.id===myId);
+  const other = state.market.other.find(x=>x.id===otherId);
+  if(!mine || !other){
+    addHistory({type:"trade", description:"Trade payment completed, but listing is no longer available", amountDelta:0});
+    return;
+  }
+  if(settle.direction==="receive"){ state.money.balance += settle.amount; }
+  state.market.my = state.market.my.filter(x=>x.id!==myId);
+  state.market.other = state.market.other.filter(x=>x.id!==otherId);
+  const myOld = {...mine, owner: other.owner};
+  const otherNew = {...other, owner: state.user.name};
+  state.market.other.unshift(myOld);
+  state.market.my.unshift(otherNew);
+  const settleText = settle.direction==="none" ? "no cash adjustment" : settle.direction==="pay" ? `paid ${inr(settle.amount)}` : `received ${inr(settle.amount)}`;
+  const amtDelta = settle.direction==="pay" ? -settle.amount : settle.direction==="receive" ? +settle.amount : 0;
+  addHistory({type:"trade", description:`Traded "${mine.title}" for "${other.title}" (${settleText})`, amountDelta:amtDelta});
+  issueCoupon("Trade reward", true);
+}
+/* ================== COUPONS (Scratch) ================== */
+function issueCoupon(reason="New coupon", silent=false){
+  const id = "c"+Date.now();
+  const code = "SAVE-" + Math.random().toString(36).slice(2,8).toUpperCase();
+  const value = [5,10,15,20][Math.floor(Math.random()*4)];
+  state.coupons.unshift({ id, title:`${value}% OFF`, code, revealed:false, type:"percent", value, createdAt:Date.now(), reason });
+  addHistory({type:"coupon", description:`Issued coupon ${code} (${value}%)`, amountDelta:0});
+  saveState();
+  if(!silent) toast("New coupon added!");
+}
+function renderCoupons(){
+  const list = $("#couponList"); if(!list) return;
+  list.innerHTML = "";
+  state.coupons.forEach(c=>{
+    const card = document.createElement("div");
+    card.className = "card coupon";
+    card.innerHTML = `
+      <div class="row-spread">
+        <div><b>${c.title}</b> <span class="tag">${c.type}</span></div>
+        <div class="muted">${new Date(c.createdAt).toLocaleString()}</div>
+      </div>
+      <div class="hr"></div>
+      <div>Code: <span class="code">${c.revealed ? c.code : "???????"}</span></div>
+      <div class="muted" style="margin-top:6px">Scratch to reveal</div>
+      <canvas width="420" height="120" data-id="${c.id}"></canvas>
+    `;
+    list.appendChild(card);
+  });
+  $$("#couponList canvas").forEach(setupScratchCanvas);
+}
+function setupScratchCanvas(cv){
+  const id = cv.dataset.id;
+  const ctx = cv.getContext("2d");
+  const w = cv.width, h = cv.height;
+  ctx.fillStyle = "#4a4a6b"; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle = "#bbb"; ctx.font = "20px sans-serif"; ctx.fillText("Scratch here", 14, 32);
+  ctx.globalCompositeOperation = "destination-out";
+  let scratching=false; let strokes=0;
+  const brush=(x,y)=>{ ctx.beginPath(); ctx.arc(x,y,16,0,Math.PI*2); ctx.fill(); };
+  const pt=(e)=>{ const r=cv.getBoundingClientRect(); const sx=cv.width/r.width; const sy=cv.height/r.height; const x=((e.touches?e.touches[0].clientX:e.clientX)-r.left)*sx; const y=((e.touches?e.touches[0].clientY:e.clientY)-r.top)*sy; return {x,y}; };
+  const move=(e)=>{ if(!scratching) return; e.preventDefault(); const {x,y}=pt(e); brush(x,y); strokes++; if(strokes>90) revealCoupon(id, cv); };
+  cv.addEventListener("mousedown",()=>{scratching=true});
+  cv.addEventListener("mouseup",()=>{scratching=false});
+  cv.addEventListener("mouseleave",()=>{scratching=false});
+  cv.addEventListener("mousemove",move);
+  cv.addEventListener("touchstart",()=>{scratching=true},{passive:false});
+  cv.addEventListener("touchend",()=>{scratching=false});
+  cv.addEventListener("touchmove",move,{passive:false});
+}
+function revealCoupon(id, cv){
+  const c = state.coupons.find(x=>x.id===id); if(!c || c.revealed) return;
+  c.revealed = true;
+  addHistory({type:"coupon-reveal", description:`Revealed coupon ${c.code} (${c.value}%)`, amountDelta:0});
+  saveState();
+  const ctx = cv.getContext("2d"); ctx.globalCompositeOperation="source-over"; ctx.clearRect(0,0,cv.width,cv.height);
+  toast(`Coupon revealed: ${c.code}`);
+}
+
+/* ================== HISTORY ================== */
+function renderHistory(){
+  const list = $("#historyList"); if(!list) return;
+  list.innerHTML="";
+  if(state.history.length===0){ list.innerHTML = `<div class="muted" style="padding:10px">No history yet.</div>`; return; }
+  state.history.forEach(h=>{
+    const row = document.createElement("div");
+    row.className = "card";
+    const amt = Number(h.amountDelta||0);
+    const amtStr = amt===0?"": `<span style="color:${amt>0?'#31e981':'#ff7a7a'}">${amt>0?'+':''}${inr(amt)}</span>`;
+    row.innerHTML = `
+      <div class="row-spread">
+        <div><b>${h.type}</b> ? ${h.description}</div>
+        <div class="muted">${new Date(h.date).toLocaleString()}</div>
+      </div>
+      <div style="margin-top:6px">${amtStr}</div>
+    `;
+    list.appendChild(row);
+  });
+}
+function clearHistory(){ if(!confirm("Clear all history?")) return; state.history = []; saveState(); toast("History cleared"); }
+
+/* ================== ACCOUNT ================== */
+function saveAccount(){
+  const name = $("#accNameInput").value.trim();
+  if(state.user && name){ state.user.name=name; saveState(); toast("Profile updated"); }
+}
+function addFunds(){
+  const raw = prompt("Enter amount to add (?)","1000");
+  if(raw===null) return;
+  const amount = parseInt(raw,10);
+  if(!Number.isFinite(amount) || amount<1){ toast("Enter valid amount", true); return; }
+  state.money.balance += amount;
+  addHistory({type:"add-funds", description:"Added money to balance", amountDelta:+amount});
+  saveState();
+  toast(`Added ${inr(amount)}`);
+}
+function resetApp(){ if(!confirm("This will clear local data and sign you out.")) return;
+  localStorage.removeItem("swap_save_state_v2"); location.reload(); }
+
+/* ================== KYC ================== */
+function autoKyc(){
+  $("#kycName").value="Aarav Kumar";
+  $("#kycAadhaar").value="123412341234";
+  $("#kycPan").value="ABCDE1234F";
+}
+function submitKYC(e){
+  e.preventDefault();
+  const nameInput = $("#kycName");
+  const aadInput  = $("#kycAadhaar");
+  const panInput  = $("#kycPan");
+  if(!nameInput || !aadInput || !panInput){
+    toast("KYC form is not available right now", true);
+    return;
+  }
+  const name = nameInput.value.trim().replace(/\s+/g, " ");
+  const aad  = aadInput.value.replace(/\D/g, "").slice(0,12);
+  const pan  = panInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0,10);
+  // keep normalized values in UI fields
+  nameInput.value = name;
+  aadInput.value = aad;
+  panInput.value = pan;
+  if(name.length < 3){ toast("Enter full name (minimum 3 characters)", true); return; }
+  if(!/^[A-Za-z][A-Za-z\s.'-]{1,58}[A-Za-z]$/.test(name)){ toast("Name contains invalid characters", true); return; }
+  if(!/^\d{12}$/.test(aad)){ toast("Aadhaar must be exactly 12 digits", true); return; }
+  if(!/^[A-Z]{5}\d{4}[A-Z]$/.test(pan)){ toast("PAN must be in format ABCDE1234F", true); return; }
+  state.kyc = {verified:true, name, aadhaar:aad, pan, verifiedAt: Date.now()};
+  addHistory({type:"kyc", description:"KYC verified", amountDelta:0});
+  saveState(); toast("KYC verified");
+}
+
+/* ================== SELL ================== */
+function kycRequiredGuard(){
+  if(!state.kyc.verified){ toast("KYC required. Please complete KYC first.", true); goto("kyc"); return false; }
+  return true;
+}
+function exampleListing(){
+  $("#sellName").value = "Trail Running Shoes";
+  $("#sellPrice").value = 175;
+  $("#sellDesc").value = "Lightweight, size 9, good condition.";
+}
+function addListing(e){
+  e.preventDefault();
+  if(!kycRequiredGuard()) return;
+  const name = $("#sellName").value.trim();
+  const price= parseInt($("#sellPrice").value||"0",10);
+  const desc = $("#sellDesc").value.trim();
+  const file = $("#sellImg").files[0];
+  if(!name || !price){ toast("Enter product name & price", true); return; }
+  const finalize = (imgData)=>{
+    const item = { id:"m"+Date.now(), owner: state.user?.name||"Me", title:name, price, desc, img:imgData };
+    state.market.my.unshift(item);
+    addHistory({type:"listing", description:`Listed "${name}" for ${inr(price)}`, amountDelta:0});
+    issueCoupon("Listing reward", true);
+    saveState();
+    $("#sellName").value=""; $("#sellPrice").value=150; $("#sellDesc").value=""; $("#sellImg").value="";
+    toast("Listing added ? Coupon unlocked");
+  };
+  if(file){
+    const reader = new FileReader();
+    reader.onload = e => finalize(e.target.result);
+    reader.readAsDataURL(file);
+  }else{
+    finalize(FALLBACK);
+  }
+}
+
+/* ================== TWM (Trade With Me) ================== */
+function seedMarketplace(){
+  const more = [
+    {owner:"Deepti", title:"Sports Watch", price:200, img:"https://images.unsplash.com/photo-1517433456452-f9633a875f6f?w=960&q=80&auto=format&fit=crop"},
+    {owner:"Eva",    title:"City Backpack", price:160, img:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=960&q=80&auto=format&fit=crop"},
+    {owner:"Farhan", title:"Studio Headphones", price:240, img:"https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=960&q=80&auto=format&fit=crop"},
+  ].map((x,i)=>({id:"oX"+Date.now()+i, ...x}));
+  state.market.other.unshift(...more); saveState(); toast("Marketplace seeded");
+}
+function getSelectedTrade(){
+  const myId = $("#twmMine")?.value;
+  const otherId = $("#twmOther")?.value;
+  const mine = state.market.my.find(x=>x.id===myId);
+  const other = state.market.other.find(x=>x.id===otherId);
+  return {mine, other};
+}
+function getSettlement(mine, other){
+  const diff = (other?.price||0) - (mine?.price||0);
+  const mode = $("#twmSettleType")?.value || "auto";
+  const typed = Math.max(0, parseInt($("#twmSettleAmount")?.value || "0", 10) || 0);
+  let direction = "none";
+  let amount = 0;
+  if(mode==="auto"){
+    if(diff>0){ direction="pay"; amount=Math.abs(diff); }
+    else if(diff<0){ direction="receive"; amount=Math.abs(diff); }
+  }else if(mode==="pay"){
+    direction = typed>0 ? "pay" : "none";
+    amount = typed;
+  }else if(mode==="receive"){
+    direction = typed>0 ? "receive" : "none";
+    amount = typed;
+  }
+  return {direction, amount, diff};
+}
+function applyFairAdjustment(){
+  const {mine, other} = getSelectedTrade();
+  if(!mine || !other){ toast("Select both listings first", true); return; }
+  $("#twmSettleType").value = "auto";
+  const fair = Math.abs((other.price||0) - (mine.price||0));
+  $("#twmSettleAmount").value = fair;
+  renderTradeAdvisor();
+}
+function renderTradeAdvisor(){
+  const {mine, other} = getSelectedTrade();
+  $("#twmMineName").textContent = mine?.title || "-";
+  $("#twmMinePrice").textContent = mine ? inr(mine.price) : "?0";
+  $("#twmOtherName").textContent = other?.title || "-";
+  $("#twmOtherPrice").textContent = other ? inr(other.price) : "?0";
+  if(!mine || !other){
+    $("#twmFairBadge").className = "fair-badge ok";
+    $("#twmFairBadge").textContent = "Waiting for selection";
+    $("#twmDeltaLine").textContent = "";
+    $("#twmSummary").textContent = "Select both listings to analyze fair trade.";
+    return;
+  }
+  const settle = getSettlement(mine, other);
+  const netFromYou = settle.direction==="pay" ? settle.amount : settle.direction==="receive" ? -settle.amount : 0;
+  const gap = (other.price - mine.price) - netFromYou;
+  const absGap = Math.abs(gap);
+  const badge = $("#twmFairBadge");
+  if(absGap===0){
+    badge.className = "fair-badge good";
+    badge.textContent = "Fair trade";
+  }else if(absGap<=300){
+    badge.className = "fair-badge ok";
+    badge.textContent = "Near fair";
+  }else{
+    badge.className = "fair-badge bad";
+    badge.textContent = "Unfair gap";
+  }
+  const baseDiff = other.price - mine.price;
+  $("#twmDeltaLine").textContent = baseDiff===0
+    ? "Both items have equal value."
+    : baseDiff>0
+      ? `Other item is higher by ${inr(baseDiff)}`
+      : `Your item is higher by ${inr(Math.abs(baseDiff))}`;
+  const settleTxt = settle.direction==="none" ? "no cash adjustment" : settle.direction==="pay" ? `you pay ${inr(settle.amount)}` : `you receive ${inr(settle.amount)}`;
+  $("#twmSummary").textContent = `Current proposal: ${settleTxt}. Remaining fairness gap: ${inr(absGap)}.`;
+}
+function renderMarketplace(){
+  $("#sellKycStatus").textContent = "KYC: " + (state.kyc.verified?"Verified":"Not verified");
+  $("#twmKycStatus").textContent  = "KYC: " + (state.kyc.verified?"Verified":"Not verified");
+
+  const mine = $("#marketMine"); const other = $("#marketOther");
+  mine.innerHTML = ""; other.innerHTML = "";
+
+  state.market.my.forEach(it=>{
+    const card = document.createElement("div");
+    card.className = "card card-pop";
+    card.innerHTML = `${imgWithFallback(it.img, it.title)}<div class="row-spread" style="margin-top:10px">
+        <div><b>${it.title}</b><div class="muted">${inr(it.price)}</div></div>
+        <span class="tag">Me</span>
+      </div>`;
+    mine.appendChild(card);
+  });
+
+  state.market.other.forEach(it=>{
+    const card = document.createElement("div");
+    card.className = "card card-pop";
+    card.innerHTML = `${imgWithFallback(it.img, it.title)}<div class="row-spread" style="margin-top:10px">
+        <div><b>${it.title}</b><div class="muted">${inr(it.price)} ? by ${it.owner}</div></div>
+        <span class="tag">Customer</span>
+      </div>`;
+    other.appendChild(card);
+  });
+
+  const selMine = $("#twmMine"), selOther = $("#twmOther");
+  selMine.innerHTML = ""; selOther.innerHTML = "";
+  state.market.my.forEach(it=>{
+    const o=document.createElement("option"); o.value=it.id; o.textContent=`${it.title} (${inr(it.price)})`; selMine.appendChild(o);
+  });
+  state.market.other.forEach(it=>{
+    const o=document.createElement("option"); o.value=it.id; o.textContent=`${it.title} (${inr(it.price)}) ? ${it.owner}`; selOther.appendChild(o);
+  });
+  renderTradeAdvisor();
+}
+function proposeTrade(){
+  if(!kycRequiredGuard()) return;
+  const myId = $("#twmMine").value, otherId = $("#twmOther").value;
+  if(!myId || !otherId){ toast("Select both listings", true); return; }
+  const mine = state.market.my.find(x=>x.id===myId);
+  const other= state.market.other.find(x=>x.id===otherId);
+  if(!mine || !other){ toast("Invalid selection", true); return; }
+  const settle = getSettlement(mine, other);
+  if(settle.direction==="pay" && settle.amount>state.money.balance){
+    toast("Insufficient balance for proposed cash adjustment", true);
+    return;
+  }
+  pendingTradeCheckout = {myId, otherId, settle};
+  $("#payItemName").value = `Trade: ${mine.title} <-> ${other.title}`;
+  $("#payAmount").value = settle.direction==="pay" ? settle.amount : 0;
+  $("#payMethod").value = "UPI";
+  goto("payment");
+  toast("Continue in Payment to complete this trade");
+}
+
+/* ================== RENDER ROOT ================== */
+function render(){
+  const isLoggedIn = !!state.user;
+  $("#navToggle").classList.toggle("hide", !isLoggedIn);
+  $("#tabs").classList.toggle("hide", !isLoggedIn);
+  $("#userChip").classList.toggle("hide", !isLoggedIn);
+  if(!isLoggedIn){
+    closeTabs();
+    $("#tabs").classList.add("collapsed");
+  }
+
+  // header chip
+  if(state.user){
+    $("#userName").innerHTML = state.user.name || "User";
+    $("#userPic").src = state.user.photo || DEMO_USER_PIC;
+    $("#userPic").classList.remove("hide");
+  } else {
+    $("#userName").textContent = "Guest";
+    $("#userPic").classList.add("hide");
+  }
+  // KYC ticks
+  $("#kycTick").classList.toggle("hide", !state.kyc.verified);
+  $("#accTick").classList.toggle("hide", !state.kyc.verified);
+  const kycAt = formatDateTime(state.kyc.verifiedAt);
+  if($("#kycVerifiedAt")){
+    $("#kycVerifiedAt").textContent = state.kyc.verified
+      ? `KYC verified on: ${kycAt}`
+      : "KYC not verified yet.";
+  }
+  if($("#accKycAt")){
+    $("#accKycAt").textContent = state.kyc.verified
+      ? `KYC verified on: ${kycAt}`
+      : "KYC status: Not verified.";
+  }
+
+  // KPIs
+  $("#kpiBalance").textContent = inr(state.money.balance);
+  $("#kpiCoupons").textContent = state.coupons.filter(c=>!c.revealed).length;
+
+  // Account
+  $("#accName").textContent = state.user?.name || "Guest";
+  $("#accEmail").textContent = state.user?.email || "guest@local";
+  $("#accPic").src = state.user?.photo || DEMO_USER_PIC;
+  $("#accBalance").textContent = inr(state.money.balance);
+  $("#accTxns").textContent = state.history.filter(h=>h.type==="payment"||h.type==="add-funds").length;
+
+  renderProducts();
+
+  renderHistory();
+  renderCoupons();
+  renderMarketplace();
+
+  applyRoute();
+}
+
+/* ================== INIT ================== */
+if(!location.hash) location.hash = "#login";
+render();
+</script>
+
+</body>
+</html>
+
+
+
